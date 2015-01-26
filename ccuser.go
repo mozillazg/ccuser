@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mozillazg/request"
 )
@@ -14,7 +15,7 @@ const (
 	version  = "0.1.0"
 	loginURL = "http://8.8.8.8:90/login"
 	homeURL  = "http://8.8.8.8:90"
-	testURL  = "http://www.baidu.com"
+	testURL  = "http://www.baidu.com/img/bd_logo1.png"
 )
 
 type md6 struct {
@@ -67,7 +68,7 @@ func (self *md6) digest() string {
 	return b
 }
 
-func (u *ccuser) status() {
+func (u *ccuser) status() bool {
 	a := request.NewArgs(new(http.Client))
 	resp, err := request.Get(testURL, a)
 	if err != nil {
@@ -82,10 +83,12 @@ func (u *ccuser) status() {
 		fmt.Println("Logged out")
 	} else {
 		fmt.Println("Logged in")
+		return true
 	}
+	return false
 }
 
-func (u *ccuser) login() {
+func (u *ccuser) login() *request.Args {
 	a := request.NewArgs(new(http.Client))
 	resp, err := request.Get(loginURL, a)
 	if err != nil {
@@ -97,7 +100,7 @@ func (u *ccuser) login() {
 	}
 	if url.String() == loginURL {
 		fmt.Println("already logged in")
-		return
+		return a
 	}
 
 	uri := strings.Split(url.String(), "?")[1]
@@ -140,7 +143,7 @@ func (u *ccuser) login() {
 		os.Exit(1)
 	}
 
-	return
+	return a
 }
 
 func (u *ccuser) logout() {
@@ -148,11 +151,30 @@ func (u *ccuser) logout() {
 	a.Data = map[string]string{
 		"login_type": "logout",
 	}
-	_, err := request.Post(testURL, a)
+	_, err := request.Post(loginURL, a)
 	if err != nil {
 		panic(err)
 	}
+	time.Sleep(1 * time.Second)
+	fmt.Println("logout success")
 	u.status()
+}
+
+func (u *ccuser) beat(a *request.Args) {
+	a.Data = map[string]string{
+		"login_type": "heartbeat",
+	}
+	fmt.Println("send heartbeat.")
+	n := 1
+	for {
+		request.Post(loginURL, a)
+		fmt.Printf("\r%s", strings.Repeat(".", n))
+		n++
+		if n > 10 {
+			n = 1
+		}
+		time.Sleep(50 * time.Second)
+	}
 }
 
 func main() {
@@ -167,8 +189,9 @@ func main() {
 
 	v := flag.Bool("V", false, "show version info")
 	help := flag.Bool("h", false, "show help info")
-	username := flag.String("u", "", "username")
-	password := flag.String("p", "", "password")
+	beat := flag.Bool("b", false, "heartbeat mode")
+	u1 := flag.String("u", "", "username")
+	p1 := flag.String("p", "", "password")
 	flag.Usage = usage
 	flag.Parse()
 	actions := flag.Args()
@@ -181,33 +204,36 @@ func main() {
 		fmt.Printf("ccuser v%s\n", version)
 		return
 	}
-	u := *username
-	p := *password
-	if u == "" {
-		u = os.Getenv("CCUSER_USERNAME")
+	username := *u1
+	password := *p1
+	if username == "" {
+		username = os.Getenv("CCUSER_USERNAME")
 	}
-	if p == "" {
-		p = os.Getenv("CCUSER_PASSWORD")
+	if password == "" {
+		password = os.Getenv("CCUSER_PASSWORD")
 	}
 
 	switch {
 	case len(actions) != 1,
-		actions[0] != "status" && u == "",
-		actions[0] != "status" && p == "":
+		actions[0] != "status" && username == "",
+		actions[0] != "status" && password == "":
 		usage()
 		os.Exit(2)
 	}
 
-	m := md6{[]byte(*password)}
+	m := md6{[]byte(password)}
 	cc := ccuser{
-		*username,
-		*password,
+		username,
+		password,
 		m.digest(),
 	}
 
 	switch actions[0] {
 	case "login":
-		cc.login()
+		a := cc.login()
+		if *beat {
+			cc.beat(a)
+		}
 	case "logout":
 		cc.logout()
 	case "status":
