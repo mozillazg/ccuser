@@ -157,9 +157,10 @@ func (u *ccuser) logout() {
 
 func main() {
 	usage := func() {
-		fmt.Fprintf(os.Stderr, "CCUser CLI tool.\n")
+		fmt.Fprintf(os.Stderr, "ccuser %s\n", version)
 		fmt.Fprintf(os.Stderr, "Usage:\n")
 		fmt.Fprintf(os.Stderr, "ccuser -u USERNAME -p PASSWORD ACTION\n")
+		fmt.Fprintf(os.Stderr, "options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "  ACTION: login, logout, status\n")
 	}
@@ -180,17 +181,25 @@ func main() {
 		fmt.Printf("ccuser v%s\n", version)
 		return
 	}
+	u := *username
+	p := *password
+	if u == "" {
+		u = os.Getenv("CCUSER_USERNAME")
+	}
+	if p == "" {
+		p = os.Getenv("CCUSER_PASSWORD")
+	}
 
 	switch {
 	case len(actions) != 1,
-		actions[0] != "status" && *username == "",
-		actions[0] != "status" && *password == "":
+		actions[0] != "status" && u == "",
+		actions[0] != "status" && p == "":
 		usage()
 		os.Exit(2)
 	}
 
 	m := md6{[]byte(*password)}
-	u := ccuser{
+	cc := ccuser{
 		*username,
 		*password,
 		m.digest(),
@@ -198,11 +207,11 @@ func main() {
 
 	switch actions[0] {
 	case "login":
-		u.login()
+		cc.login()
 	case "logout":
-		u.logout()
+		cc.logout()
 	case "status":
-		u.status()
+		cc.status()
 	default:
 		usage()
 		os.Exit(2)

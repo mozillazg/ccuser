@@ -2,12 +2,19 @@
 CCUser CLI tool. Written in Go.
 
 
-```go get github.com/mozillazg/ccuser```
+## download
+https://github.com/mozillazg/ccuser/releases
 
+## usage
 
 ```
 $ ccuser --help
 $ ccuser status
-$ ccuser -u foo -p bar login
-$ ccuser -u foo -p bar logout
+$ ccuser -u username -p password login
+$ ccuser -u username -p password logout
+$
+$ export CCUSER_USERNAME='username'
+$ export CCUSER_PASSWORD='password'
+$ ccuser login
+$ ccuser logout
 ```
