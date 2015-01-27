@@ -168,7 +168,9 @@ func (u *ccuser) beat(a *request.Args) {
 	n := 1
 	for {
 		request.Post(loginURL, a)
-		fmt.Printf("\r%s", strings.Repeat(".", n))
+		fmt.Printf(
+			"\r%s%s", strings.Repeat(".", n), strings.Repeat(" ", 10-n),
+		)
 		n++
 		if n > 10 {
 			n = 1
