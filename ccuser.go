@@ -118,7 +118,7 @@ func (u *ccuser) login() *request.Args {
 		"show_read":            "block",
 		"show_assure":          "none",
 		"assure_phone":         "",
-		"password1":            "",
+		"password1":            u.raw_password,
 		"new_password":         "",
 		"retype_newpassword":   "",
 		"captcha_value":        "",
