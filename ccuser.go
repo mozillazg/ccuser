@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	version  = "0.1.0"
+	version  = "0.1.1"
 	loginURL = "http://8.8.8.8:90/login"
 	homeURL  = "http://8.8.8.8:90"
-	testURL  = "http://www.baidu.com/img/bd_logo1.png"
+	testURL  = "http://www.baidu.com/"
 )
 
 type md6 struct {
@@ -80,9 +80,9 @@ func (u *ccuser) status() bool {
 	}
 
 	if strings.HasPrefix(url.String(), homeURL) {
-		fmt.Println("Logged out")
+		fmt.Println("Current Status: can't visit", testURL, "need login")
 	} else {
-		fmt.Println("Logged in")
+		fmt.Println("Current Status: can visit", testURL)
 		return true
 	}
 	return false
@@ -232,7 +232,11 @@ func main() {
 
 	switch actions[0] {
 	case "login":
-		a := cc.login()
+		s := cc.status()
+		a := request.NewArgs(new(http.Client))
+		if !s {
+			a = cc.login()
+		}
 		if *beat {
 			cc.beat(a)
 		}
